@@ -34,8 +34,11 @@ def get_blob_container_client(container_name="container"):
 
 
 def get_mysql_connector():
+    def _get_password():
+        mysql_server_config['password'] = getpass.getpass('MySQL server password: ')
+
     if mysql_server_config['password'] is None:
-        mysql_server_config['password'] = getpass.getpass('mysql password: ')
+        _get_password()
 
     while True:
         try:
@@ -43,8 +46,8 @@ def get_mysql_connector():
             print("Connection established")
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with the user name or password")
-                mysql_server_config['password'] = getpass.getpass('mysql password: ')
+                print("Incorrect password")
+                _get_password()
                 continue
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
