@@ -1,0 +1,6 @@
+azure-storage-blob
+mysql-connector-python
+numpy
+pandas
+torch
+tqdm
