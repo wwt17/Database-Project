@@ -148,16 +148,21 @@ def input_row(dtypes, skip_labels=[]):
             if dtype == 'category':
                 dtype_prompt = 'category: ' + '/'.join(map(str, dtype.categories))
             elif dtype == 'bool':
-                dtype_prompt = 'bool: True/False/Yes/No/T/F/Y/N'
+                dtype_prompt = 'bool: T(rue)/Y(es)/1/F(alse)/N(o)/0'
             else:
-                dtype_prompt = str(dtype)
+                for int_tuple in int_tuples:
+                    if column_label in data_names_of_kind[tuple(sorted(int_tuple))]:
+                        dtype_prompt = 'category: ' + ' / '.join(f'{idx}: {cat}' for idx, cat in enumerate(int_tuple))
+                        break
+                else:
+                    dtype_prompt = str(dtype)
             while True:
                 inp = input(f'{column_label} ({dtype_prompt}): ').strip()
                 if dtype == 'bool':
                     inp = inp.lower()
-                    if inp in ['true', 'yes', 't', 'y']:
+                    if inp in ['true', 'yes', 't', 'y', '1']:
                         inp = True
-                    elif inp in ['false', 'no', 'f', 'n']:
+                    elif inp in ['false', 'no', 'f', 'n', '0']:
                         inp = False
                     else:
                         print('Incorrect type of value.')
@@ -540,16 +545,19 @@ if __name__ == '__main__':
 
     model = build_model(df.dtypes, predicted_labels, args=args)
     model = model.to(device)
-    if args.load_model is not None:
-        load_model(model, args.load_model)
-
-    input_row_prompt = f'For convenience, you may input an integer id between {df.index[0]} and {df.index[-1]} so that the program will simply use the tuple with this id in the dataset, or you may press enter so you have to input all fields of a row: '
-    n_accu_updates = 0
 
     def _retrain():
         cur_df = mysql_table_to_dataframe(cursor, table_name, df.dtypes)
         train_machine_learning_model(model, cur_df, predicted_labels, args)
         n_accu_updates = 0
+
+    if args.load_model is not None:
+        load_model(model, args.load_model)
+    else:
+        _retrain()
+
+    input_row_prompt = f'For convenience, you may input an integer id between {df.index[0]} and {df.index[-1]} so that the program will simply use the tuple with this id in the dataset, or you may press enter so you have to input all fields of a row: '
+    n_accu_updates = 0
 
     while True:
         try:
